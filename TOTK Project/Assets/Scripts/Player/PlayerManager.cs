@@ -29,7 +29,7 @@ public class PlayerManager : MonoBehaviour
     }
 
     private enum State {
-        Grounded, Air, Water, Gliding, Climbing
+        Grounded, Air, Water, Climbing
     }
 
     /** Checks if grounded and switches states **/

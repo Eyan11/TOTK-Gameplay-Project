@@ -1345,6 +1345,7 @@ GameObject:
   - component: {fileID: 1883924039}
   - component: {fileID: 1883924041}
   - component: {fileID: 1883924043}
+  - component: {fileID: 1883924044}
   - component: {fileID: 1883924042}
   m_Layer: 0
   m_Name: Player
@@ -1461,9 +1462,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   walkSpeed: 10
-  sprintSpeed: 15
+  runSpeed: 15
+  exhaustedSpeed: 5
   groundedDrag: 20
-  jumpForce: 7
+  jumpForce: 6
 --- !u!114 &1883924043
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1478,6 +1480,24 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   groundedRotSpeed: 10
   airRotSpeed: 0
+--- !u!114 &1883924044
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1883924035}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b167f1f650e6954459472c8d3ae6e370, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxStamina: 100
+  rechargeStaminaPerSecond: 40
+  runStaminaPerSecond: 25
+  glideStaminaPerSecond: 5
+  jumpStaminaBurst: 20
+  rechargeDelayTime: 1
 --- !u!1 &1963627332
 GameObject:
   m_ObjectHideFlags: 3

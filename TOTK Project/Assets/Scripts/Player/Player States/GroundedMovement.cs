@@ -9,10 +9,12 @@ public class GroundedMovement : MonoBehaviour
     private PlayerInput inputScript;
     private PlayerManager playerManagerScript;
     private PlayerRotation rotationScript;
+    private PlayerStamina staminaScript;
 
     [Header ("Movement Settings")]
     [SerializeField] private float walkSpeed;
-    [SerializeField] private float sprintSpeed;
+    [SerializeField] private float runSpeed;
+    [SerializeField] private float exhaustedSpeed;
     [SerializeField] private float groundedDrag;
     private Vector3 moveDir = Vector3.zero;
     private Vector3 moveVel = Vector3.zero;
@@ -27,26 +29,24 @@ public class GroundedMovement : MonoBehaviour
         inputScript = GetComponent<PlayerInput>();
         playerManagerScript = GetComponent<PlayerManager>();
         rotationScript = GetComponent<PlayerRotation>();
-
-        curSpeed = walkSpeed;
+        staminaScript = GetComponent<PlayerStamina>();
     }
 
     private void OnEnable() {
-
         // reset variables
         moveDir = Vector3.zero;
         body.drag = groundedDrag;
         hasJumped = false;
+
+        // set initial speed
+        if(staminaScript.IsExhausted)
+            curSpeed = exhaustedSpeed;
+        else
+            curSpeed = walkSpeed;
     }
 
     private void Update() {
-
-        if(!hasJumped)
-            MovementCalculations();
-
-        if(inputScript.JumpInput && !hasJumped)
-            Jump();
-
+        ManageMovement();
         LimitVelocity();
     }
 
@@ -55,12 +55,51 @@ public class GroundedMovement : MonoBehaviour
         body.AddForce(moveDir.normalized * curSpeed * 50f, ForceMode.Force);
     }
 
+
+    /** Determines which movements to do (walk, run, exhausted, or jump) **/
+    private void ManageMovement() {
+
+        // stop everything when jumping (handled by air state script)
+        if(hasJumped)
+            return;
+
+        if(!staminaScript.IsExhausted) {
+            // run
+            if(inputScript.RunInput)
+                Run();
+            // walk
+            else
+                curSpeed = walkSpeed;
+        }
+
+        MovementCalculations();
+
+        if(inputScript.JumpInput)
+            Jump();
+    }
+
+
+    /** Sets current speed and uses run stamina **/
+    private void Run() {
+
+        // use run stamina
+        staminaScript.UseStaminaPerSecond('R');
+
+        // set speed
+        if(staminaScript.IsExhausted)
+            curSpeed = exhaustedSpeed;
+        else
+            curSpeed = runSpeed;
+    }
+
+
     /** Calculates horizontal movement direction **/
     private void MovementCalculations() {
         
         // move direction calculations
         moveDir = transform.forward * inputScript.MoveInput.magnitude;
     }
+
 
     /** Caps horizontal movement velocity **/
     private void LimitVelocity() {
@@ -78,7 +117,7 @@ public class GroundedMovement : MonoBehaviour
     }
 
 
-    /** Applies jump impulse **/
+    /** Applies jump impulse and stamina **/
     private void Jump() {
     
         // reset y velocity
@@ -87,12 +126,15 @@ public class GroundedMovement : MonoBehaviour
         // apply jump force
         body.AddForce(transform.up * jumpForce, ForceMode.Impulse);
 
+        // use stamina when running
+        if(curSpeed == runSpeed)
+            staminaScript.UseStaminaBurst('J');
+
         // jump settings
         body.drag = 0f;
         hasJumped = true;
         moveDir = Vector3.zero;
         rotationScript.ChangeRotationSpeed('A');
     }
-
 
 }
