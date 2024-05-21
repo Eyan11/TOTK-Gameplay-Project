@@ -12,6 +12,7 @@ public class PlayerInput : MonoBehaviour
     //button down inputs
     public bool JumpInput { get; private set; }
 
+
     private void Awake() {
         //create a new Input Map object and enable the King Slime input
         inputMap = new InputMap();
@@ -26,5 +27,6 @@ public class PlayerInput : MonoBehaviour
         //gets button down inputs (true for 1 frame)
         JumpInput = inputMap.Player.Jump.triggered;
     }
+
 
 }
