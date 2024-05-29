@@ -33,7 +33,7 @@ public class PlayerStamina : MonoBehaviour
         if(rechargeDelayCounter < 0 && managerScript.IsGrounded)
             RechargeStamina();
 
-        Debug.Log("Stamina: " + CurStamina);
+        //Debug.Log("Stamina: " + CurStamina);
     }
 
 

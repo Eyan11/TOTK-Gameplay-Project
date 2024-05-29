@@ -7,63 +7,71 @@ public class PlayerManager : MonoBehaviour
     [Header ("References")]
     private PlayerRotation rotationScript;
     private GroundedMovement groundedMoveScript;
+    private AirMovement airMoveScript;
 
     [Header ("Settings")]
     [SerializeField] private float rayInterval;
-    [SerializeField] private float rayDistance;
+    [SerializeField] private float groundedRayDist;
+    [SerializeField] private float landingRayDist;
     [SerializeField] private LayerMask floorLayer;
     public bool IsGrounded { get; private set; }
-    private State playerState = State.Grounded;
+    public bool IsLanding { get; private set; }
+    private Ray ray;
+    private RaycastHit hit;
+
+    public enum State { Grounded, Air, Water, Climbing }
+    public State PlayerState { get; private set; }
 
     private void Awake() {
         rotationScript = GetComponent<PlayerRotation>();
         groundedMoveScript = GetComponent<GroundedMovement>();
+        airMoveScript = GetComponent<AirMovement>();
         
-        StartCoroutine(GrouncCheckCoroutine());
+        StartCoroutine(RaycastCoroutine());
 
         //enable grounded scripts
         ChangeStates(State.Grounded);
 
         //rayDistance is inspector value + distance from origin to bottom of collider
-        rayDistance += GetComponent<CapsuleCollider>().height/2f;
-    }
-
-    private enum State {
-        Grounded, Air, Water, Climbing
+        groundedRayDist += GetComponent<CapsuleCollider>().height/2f;
+        landingRayDist += GetComponent<CapsuleCollider>().height/2f;
     }
 
     /** Checks if grounded and switches states **/
-    private IEnumerator GrouncCheckCoroutine() {
+    private IEnumerator RaycastCoroutine() {
 
-        //if a ray going down collides with floor
-        if(Physics.Raycast(transform.position, -transform.up, rayDistance, floorLayer)) {
-            IsGrounded = true;
+        // raycast
+        ray = new Ray(transform.position, -transform.up);
 
-            if(playerState == State.Air)
-                ChangeStates(State.Grounded);
+        if(Physics.Raycast(ray, out hit, floorLayer)) {
+
+            IsGrounded = (hit.distance <= groundedRayDist);
+            IsLanding = (hit.distance <= landingRayDist) && (PlayerState == State.Air);
         }
-        else {
-            IsGrounded = false;
 
-            if(playerState == State.Grounded)
-                ChangeStates(State.Air);
-        }
+
+        // change states
+        if(IsGrounded && PlayerState == State.Air)
+            ChangeStates(State.Grounded);
+        else if(!IsGrounded && PlayerState == State.Grounded)
+            ChangeStates(State.Air);
 
         yield return new WaitForSeconds(rayInterval);
-        StartCoroutine(GrouncCheckCoroutine());
+        StartCoroutine(RaycastCoroutine());
     }
 
     /** Disables old state and enables new state **/
     private void ChangeStates(State newState) {
 
         //disable scripts from previous state
-        switch(playerState) {
+        switch(PlayerState) {
 
             case State.Grounded:
                 groundedMoveScript.enabled = false;
                 break;
 
             case State.Air:
+                airMoveScript.enabled = false;
                 break;
         }
 
@@ -76,11 +84,12 @@ public class PlayerManager : MonoBehaviour
                 break;
 
             case State.Air:
+                airMoveScript.enabled = true;
                 rotationScript.ChangeRotationSpeed('A');
                 break;
         }
 
-        playerState = newState;
+        PlayerState = newState;
     }
 
 }
