@@ -15,25 +15,34 @@ public class PlayerStamina : MonoBehaviour
     [SerializeField] private float jumpStaminaBurst;
     [SerializeField] private float rechargeDelayTime;
     public float CurStamina { get; private set; }
+    public float CurStaminaUsage { get; private set; }
     public bool IsExhausted { get; private set;}
-    private float rechargeDelayCounter = 0f;
+    public float RechargeDelayCounter { get; private set;}
 
 
     private void Awake() {
         managerScript = GetComponent<PlayerManager>();
         CurStamina = maxStamina;
+        RechargeDelayCounter = 0f;
     }
 
 
     private void Update() {
 
-        rechargeDelayCounter -= Time.deltaTime;
+        RechargeDelayCounter -= Time.deltaTime;
 
-        // if recharge delay finished and grounded
-        if(rechargeDelayCounter < 0 && managerScript.IsGrounded)
-            RechargeStamina();
+        // if Grounded state
+        if(managerScript.PlayerState == PlayerManager.State.Grounded) {
 
-        //Debug.Log("Stamina: " + CurStamina);
+            if(RechargeDelayCounter < 0)
+                RechargeStamina();
+
+            // reset CurStaminaUsage when not in use (for StaminaUI script)
+            if(RechargeDelayCounter < 0.9)
+                CurStaminaUsage = 0f;
+        }
+
+
     }
 
 
@@ -52,21 +61,23 @@ public class PlayerStamina : MonoBehaviour
         if(CurStamina <= 0)
             return;
 
-        // use stamina per second for movement type
+        // set CurStaminaUsage
         switch(staminaType) {
 
             case 'R':
-                CurStamina -= runStaminaPerSecond * Time.deltaTime;
+                CurStaminaUsage = runStaminaPerSecond;
                 break;
             case 'G':
-                CurStamina -= glideStaminaPerSecond * Time.deltaTime;
+                CurStaminaUsage = glideStaminaPerSecond;
                 break;
             default:
                 Debug.LogError("PlayerStamina > UseStaminaPerSecond parameter is incorrect");
                 break;
         }
 
-        rechargeDelayCounter = rechargeDelayTime;
+        // calculate stamina
+        CurStamina -= CurStaminaUsage * Time.deltaTime;
+        RechargeDelayCounter = rechargeDelayTime;
         LimitStamina();
     }
 
@@ -77,10 +88,11 @@ public class PlayerStamina : MonoBehaviour
         if(CurStamina <= 0)
             return;
 
+        // set CurStaminaUsage
         switch(staminaType) {
 
             case 'J':
-                CurStamina -= jumpStaminaBurst;
+                CurStaminaUsage = jumpStaminaBurst;
                 break;
             case 'C':
                 break;
@@ -91,7 +103,9 @@ public class PlayerStamina : MonoBehaviour
                 break;
         }
 
-        rechargeDelayCounter = rechargeDelayTime;
+        // calculate stamina
+        CurStamina -= CurStaminaUsage;
+        RechargeDelayCounter = rechargeDelayTime;
         LimitStamina();
     }
 
@@ -101,10 +115,12 @@ public class PlayerStamina : MonoBehaviour
         if(CurStamina < 0) {
             CurStamina = 0f;
             IsExhausted = true;
+            EventManager.current.TriggerExhaustedEvent();
         }
         else if(CurStamina > maxStamina) {
             CurStamina = maxStamina;
             IsExhausted = false;
+            EventManager.current.TriggerReplenishedEvent();
         }
     }
 
